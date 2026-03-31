@@ -1,0 +1,405 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@import '@blinkdotnew/ui/styles';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    letter-spacing: 0em;
+  }
+}
+
+/* ── RetroPlay Dark Gaming Palette ─────────────────────────────────────────── */
+:root {
+  /* Deep space dark background */
+  --background: 225 25% 7%;
+  --foreground: 210 40% 92%;
+
+  /* Cards slightly lighter than bg */
+  --card: 225 22% 11%;
+  --card-foreground: 210 40% 92%;
+
+  --popover: 225 22% 11%;
+  --popover-foreground: 210 40% 92%;
+
+  /* Neon green - retro gaming primary */
+  --primary: 142 76% 52%;
+  --primary-foreground: 225 25% 7%;
+
+  /* Purple secondary */
+  --secondary: 265 30% 18%;
+  --secondary-foreground: 265 60% 85%;
+
+  --muted: 225 20% 15%;
+  --muted-foreground: 215 20% 55%;
+
+  /* Cyan accent */
+  --accent: 188 100% 50%;
+  --accent-foreground: 225 25% 7%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 225 20% 18%;
+  --input: 225 20% 14%;
+  --ring: 142 76% 52%;
+
+  /* Charts */
+  --chart-1: 142 76% 52%;
+  --chart-2: 188 100% 50%;
+  --chart-3: 265 80% 65%;
+  --chart-4: 48 96% 53%;
+  --chart-5: 0 84% 60%;
+
+  /* Sidebar */
+  --sidebar: 225 25% 8%;
+  --sidebar-foreground: 210 40% 85%;
+  --sidebar-primary: 142 76% 52%;
+  --sidebar-primary-foreground: 225 25% 7%;
+  --sidebar-accent: 225 20% 15%;
+  --sidebar-accent-foreground: 210 40% 85%;
+  --sidebar-border: 225 20% 15%;
+  --sidebar-ring: 142 76% 52%;
+
+  /* Fonts */
+  --font-sans: 'Inter', sans-serif;
+  --font-heading: 'Orbitron', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font-pixel: 'Press Start 2P', monospace;
+
+  /* Shadows */
+  --shadow-2xs: 0px 2px 6px hsl(0 0% 0% / 0.3);
+  --shadow-xs: 0px 2px 8px hsl(0 0% 0% / 0.4);
+  --shadow-sm: 0px 4px 12px hsl(0 0% 0% / 0.5);
+  --shadow: 0px 6px 20px hsl(0 0% 0% / 0.5);
+  --shadow-md: 0px 8px 24px hsl(0 0% 0% / 0.6);
+  --shadow-lg: 0px 12px 32px hsl(0 0% 0% / 0.7);
+  --shadow-xl: 0px 20px 48px hsl(0 0% 0% / 0.8);
+  --shadow-2xl: 0px 32px 64px hsl(0 0% 0% / 0.9);
+  --shadow-neon-green: 0 0 20px hsl(142 76% 52% / 0.5), 0 0 40px hsl(142 76% 52% / 0.2);
+  --shadow-neon-cyan: 0 0 20px hsl(188 100% 50% / 0.5), 0 0 40px hsl(188 100% 50% / 0.2);
+
+  /* Misc */
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+  --radius: 0.5rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 8px);
+  --radius-full: 9999px;
+
+  /* Duration/easing */
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+  --easing-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-smooth: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --easing-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Font sizes */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+  --line-height-heading: 1.3;
+}
+
+/* Force dark mode always for gaming app */
+:root.dark,
+.theme-linear.dark,
+.theme-glass.dark,
+.theme-midnight.dark,
+.theme-minimal.dark,
+html {
+  /* Use same dark values always */
+  --background: 225 25% 7%;
+  --foreground: 210 40% 92%;
+  --card: 225 22% 11%;
+  --card-foreground: 210 40% 92%;
+  --popover: 225 22% 11%;
+  --popover-foreground: 210 40% 92%;
+  --primary: 142 76% 52%;
+  --primary-foreground: 225 25% 7%;
+  --secondary: 265 30% 18%;
+  --secondary-foreground: 265 60% 85%;
+  --muted: 225 20% 15%;
+  --muted-foreground: 215 20% 55%;
+  --accent: 188 100% 50%;
+  --accent-foreground: 225 25% 7%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 225 20% 18%;
+  --input: 225 20% 14%;
+  --ring: 142 76% 52%;
+  --chart-1: 142 76% 52%;
+  --chart-2: 188 100% 50%;
+  --chart-3: 265 80% 65%;
+  --chart-4: 48 96% 53%;
+  --chart-5: 0 84% 60%;
+  --sidebar: 225 25% 8%;
+  --sidebar-foreground: 210 40% 85%;
+  --sidebar-primary: 142 76% 52%;
+  --sidebar-primary-foreground: 225 25% 7%;
+  --sidebar-accent: 225 20% 15%;
+  --sidebar-accent-foreground: 210 40% 85%;
+  --sidebar-border: 225 20% 15%;
+  --sidebar-ring: 142 76% 52%;
+}
+
+/* ── Custom Gaming UI Classes ─────────────────────────────────────────────── */
+
+.font-pixel {
+  font-family: 'Press Start 2P', monospace;
+}
+
+.font-heading {
+  font-family: 'Orbitron', sans-serif;
+}
+
+.neon-text-green {
+  color: hsl(142 76% 52%);
+  text-shadow: 0 0 10px hsl(142 76% 52% / 0.8), 0 0 20px hsl(142 76% 52% / 0.4);
+}
+
+.neon-text-cyan {
+  color: hsl(188 100% 50%);
+  text-shadow: 0 0 10px hsl(188 100% 50% / 0.8), 0 0 20px hsl(188 100% 50% / 0.4);
+}
+
+.neon-border-green {
+  border-color: hsl(142 76% 52%);
+  box-shadow: 0 0 10px hsl(142 76% 52% / 0.3), inset 0 0 10px hsl(142 76% 52% / 0.05);
+}
+
+.neon-border-cyan {
+  border-color: hsl(188 100% 50%);
+  box-shadow: 0 0 10px hsl(188 100% 50% / 0.3), inset 0 0 10px hsl(188 100% 50% / 0.05);
+}
+
+.game-card {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.game-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, hsl(142 76% 52% / 0.05) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.game-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 16px 40px hsl(0 0% 0% / 0.6), 0 0 20px hsl(142 76% 52% / 0.2);
+  border-color: hsl(142 76% 52% / 0.5);
+}
+
+.game-card:hover::before {
+  opacity: 1;
+}
+
+.game-card:active {
+  transform: translateY(-2px) scale(1.01);
+}
+
+.btn-retro {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: all 0.15s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-retro::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, transparent, hsl(0 0% 100% / 0.1), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.4s ease;
+}
+
+.btn-retro:hover::after {
+  transform: translateX(100%);
+}
+
+.scanlines {
+  position: relative;
+}
+
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    hsl(0 0% 0% / 0.03) 2px,
+    hsl(0 0% 0% / 0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.grid-scanlines {
+  background-image: 
+    linear-gradient(hsl(142 76% 52% / 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(142 76% 52% / 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.retro-badge {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 3px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(225 25% 7%);
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(225 20% 22%);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(142 76% 52% / 0.6);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px hsl(142 76% 52% / 0.4); }
+  50% { box-shadow: 0 0 20px hsl(142 76% 52% / 0.8), 0 0 40px hsl(142 76% 52% / 0.3); }
+}
+
+@keyframes loading-bar {
+  0% { width: 0%; }
+  50% { width: 70%; }
+  100% { width: 100%; }
+}
+
+@keyframes pixelate-in {
+  0% { filter: blur(8px) saturate(0); opacity: 0; transform: scale(0.95); }
+  60% { filter: blur(2px) saturate(0.5); opacity: 0.7; }
+  100% { filter: blur(0) saturate(1); opacity: 1; transform: scale(1); }
+}
+
+@keyframes scanline-sweep {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes flicker {
+  0%, 95%, 100% { opacity: 1; }
+  96% { opacity: 0.8; }
+  97% { opacity: 1; }
+  98% { opacity: 0.9; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.35s ease-out forwards;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-pixelate-in {
+  animation: pixelate-in 0.6s ease-out forwards;
+}
+
+.animate-flicker {
+  animation: flicker 4s ease-in-out infinite;
+}
+
+/* Stagger children */
+.stagger-children > * {
+  opacity: 0;
+  animation: fadeIn 0.4s ease-out forwards;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.10s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.20s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.30s; }
+.stagger-children > *:nth-child(7) { animation-delay: 0.35s; }
+.stagger-children > *:nth-child(8) { animation-delay: 0.40s; }
+
+/* Emulator container */
+#emulator-container {
+  position: relative;
+  background: #000;
+}
+
+#emulator-container canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* ROM upload dropzone */
+.rom-dropzone {
+  border: 2px dashed hsl(225 20% 25%);
+  transition: all 0.2s ease;
+}
+
+.rom-dropzone.active {
+  border-color: hsl(142 76% 52%);
+  background: hsl(142 76% 52% / 0.05);
+  box-shadow: 0 0 20px hsl(142 76% 52% / 0.2);
+}
+
+/* Prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
