@@ -55,7 +55,7 @@ export function LibraryPage() {
     <div className="min-h-screen bg-background grid-scanlines">
       <Navbar onSearchChange={setSearchQuery} searchValue={searchQuery} />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
 
         {/* Hero section */}
         {localGames.length === 0 && (
@@ -156,7 +156,7 @@ export function LibraryPage() {
           {isLoading ? (
             <div className={cn(
               viewMode === 'grid'
-                ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4'
+                ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4'
                 : 'flex flex-col gap-2'
             )}>
               {Array.from({ length: 6 }).map((_, i) => (

@@ -10,11 +10,13 @@ import { DEMO_GAMES } from '../lib/demo-games'
 
 interface GameLibraryContextType {
   games: Game[]
+  favorites: string[]
   isLoading: boolean
 
   addGame: (game: Omit<Game, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Game>
   uploadROM: (file: File, console: ConsoleType, meta?: Partial<Game>) => Promise<Game>
   removeGame: (id: string) => Promise<void>
+  toggleFavorite: (id: string) => void
   refreshLibrary: () => Promise<void>
 
   searchGames: (query: string) => Game[]
@@ -23,14 +25,28 @@ interface GameLibraryContextType {
 
 const GameLibraryContext = createContext<GameLibraryContextType | null>(null)
 
+const FAVORITES_KEY = 'retroplay_favorites'
+
+function loadFavorites(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]')
+  } catch {
+    return []
+  }
+}
+
+function saveFavorites(favs: string[]) {
+  localStorage.setItem(FAVORITES_KEY, JSON.stringify(favs))
+}
+
 export function GameLibraryProvider({ children }: { children: React.ReactNode }) {
   const [games, setGames] = useState<Game[]>([])
+  const [favorites, setFavorites] = useState<string[]>(loadFavorites)
   const [isLoading, setIsLoading] = useState(true)
 
   const refreshLibrary = useCallback(async () => {
     try {
       const stored = await getAllGames()
-
       const storedIds = new Set(stored.map(g => g.id))
       const demoFiltered = DEMO_GAMES.filter(d => !storedIds.has(d.id))
       setGames([...stored, ...demoFiltered])
@@ -49,7 +65,7 @@ export function GameLibraryProvider({ children }: { children: React.ReactNode })
   const addGame = useCallback(async (game: Omit<Game, 'id' | 'createdAt' | 'updatedAt'>) => {
     const newGame = await saveGame(game)
     setGames(prev => {
-      const filtered = prev.filter(g => g.id !== `demo-${game.console}-1` || !g.isLocal === false)
+      const filtered = prev.filter(g => g.id !== `demo-${game.console}-1`)
       return [newGame, ...filtered]
     })
     return newGame
@@ -60,16 +76,13 @@ export function GameLibraryProvider({ children }: { children: React.ReactNode })
     consoleType: ConsoleType,
     meta: Partial<Game> = {}
   ): Promise<Game> => {
-    // 1. Save ROM to local filesystem via Capacitor
-    const romFileName = await saveRom(file)
-
     const titleFromFile = file.name
       .replace(/\.[^/.]+$/, '')
       .replace(/[_\-]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim()
 
-    // 2. Save game metadata locally
+    // First save game metadata to get the ID
     const game = await saveGame({
       title: meta.title || titleFromFile,
       console: consoleType,
@@ -79,23 +92,42 @@ export function GameLibraryProvider({ children }: { children: React.ReactNode })
       genre: meta.genre || [],
       players: meta.players || 1,
       rating: meta.rating,
-      romFileName: romFileName,
+      romFileName: file.name,
       romSize: file.size,
       isLocal: true,
-      romPath: romFileName // Keeping it for compatibility
+      romPath: '',   // will be updated below
     })
+
+    // Save ROM binary — pass game.id so web IDB uses it as the key
+    await saveRom(file, game.id)
+
+    // Update game with the romPath = game.id (IDB key on web, filename on native)
+    const updatedGame: Game = { ...game, romPath: game.id }
 
     setGames(prev => {
       const filtered = prev.filter(g => !(g.id === `demo-${consoleType}-1`))
-      return [game, ...filtered]
+      return [updatedGame, ...filtered]
     })
 
-    return game
+    return updatedGame
   }, [])
 
   const removeGame = useCallback(async (id: string) => {
     await deleteGame(id)
     setGames(prev => prev.filter(g => g.id !== id))
+    setFavorites(prev => {
+      const next = prev.filter(fid => fid !== id)
+      saveFavorites(next)
+      return next
+    })
+  }, [])
+
+  const toggleFavorite = useCallback((id: string) => {
+    setFavorites(prev => {
+      const next = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]
+      saveFavorites(next)
+      return next
+    })
   }, [])
 
   const searchGames = useCallback((query: string): Game[] => {
@@ -116,10 +148,12 @@ export function GameLibraryProvider({ children }: { children: React.ReactNode })
   return (
     <GameLibraryContext.Provider value={{
       games,
+      favorites,
       isLoading,
       addGame,
       uploadROM,
       removeGame,
+      toggleFavorite,
       refreshLibrary,
       searchGames,
       filterByConsole,

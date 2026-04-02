@@ -384,6 +384,31 @@ html {
   image-rendering: crisp-edges;
 }
 
+/* ── Mobile-specific fixes ─────────────────────────────────────────────────── */
+
+/* Full-bleed emulator on phones */
+@media (max-width: 639px) {
+  #emulator-container {
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+  }
+
+  /* EmulatorJS virtual gamepad: make touch targets bigger */
+  .ejs-controls button,
+  .ejs-controls [role="button"] {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* Safe area insets for notch/home-bar devices */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+  }
+}
+
 /* ROM upload dropzone */
 .rom-dropzone {
   border: 2px dashed hsl(225 20% 25%);

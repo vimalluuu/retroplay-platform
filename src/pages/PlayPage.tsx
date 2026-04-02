@@ -1,29 +1,38 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, Star, Info, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowLeft, Star, Info, ChevronDown, ChevronUp, Heart } from 'lucide-react'
 import { EmulatorPlayer } from '../components/emulator/EmulatorPlayer'
 import { Navbar } from '../components/layout/Navbar'
 import { useGameLibrary } from '../contexts/GameLibraryContext'
 import { CONSOLE_INFO } from '../types'
+import { getRomBase64, getRomBlobUrl } from '../lib/storage'
+import { cn } from '../lib/utils'
 
-import { Filesystem, Directory } from '@capacitor/filesystem'
+// Detect Capacitor native
+function isNative(): boolean {
+  return typeof window !== 'undefined' &&
+    'Capacitor' in window &&
+    (window as Window & { Capacitor: { isNativePlatform?: () => boolean } }).Capacitor?.isNativePlatform?.() === true
+}
 
 export function PlayPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { games } = useGameLibrary()
+  const { games, favorites, toggleFavorite } = useGameLibrary()
 
-  const [romBase64, setRomBase64] = useState<string | null>(null)
+  // We pass blob URL (web) or base64 (native) to the emulator
+  const [romSource, setRomSource] = useState<{ type: 'url'; url: string } | { type: 'base64'; data: string } | null>(null)
   const [romError, setRomError] = useState<string | null>(null)
   const [isLoadingRom, setIsLoadingRom] = useState(true)
   const [showInfo, setShowInfo] = useState(false)
 
   const game = games.find(g => g.id === id)
+  const isFav = favorites?.includes(id || '') ?? false
   const consoleInfo = game ? CONSOLE_INFO[game.console] : null
 
   useEffect(() => {
     if (!game) {
-      if (!games.length) return // Still loading
+      if (!games.length) return
       navigate('/', { replace: true })
       return
     }
@@ -37,28 +46,37 @@ export function PlayPage() {
       setIsLoadingRom(true)
       setRomError(null)
       try {
-        if (!game.romFileName) {
-          throw new Error('ROM file name missing in game library')
+        if (isNative()) {
+          // Native Android/iOS: read base64 from Capacitor Filesystem
+          const base64 = await getRomBase64(game)
+          setRomSource({ type: 'base64', data: base64 })
+        } else {
+          // Web: get blob URL from IndexedDB
+          const blobUrl = await getRomBlobUrl(game.id)
+          if (!blobUrl) {
+            throw new Error('ROM not found in local storage. Please re-upload your ROM file.')
+          }
+          setRomSource({ type: 'url', url: blobUrl })
         }
-
-        // Reading directly from device storage (Filesystem API)
-        const file = await Filesystem.readFile({
-          path: `roms/${game.romFileName}`,
-          directory: Directory.Data
-        })
-        
-        setRomBase64(file.data as string)
-
       } catch (err) {
-        setRomError('Failed to load ROM file from device storage.')
-        console.error(err)
+        const msg = err instanceof Error ? err.message : 'Failed to load ROM file.'
+        setRomError(msg)
+        console.error('[PlayPage] ROM load error:', err)
       } finally {
         setIsLoadingRom(false)
       }
     }
 
     loadRom()
-  }, [game, games.length, id, navigate])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game?.id, games.length])
+
+  // Build the ROM URL for the emulator (blob URL or data URL)
+  const romUrl = romSource
+    ? romSource.type === 'url'
+      ? romSource.url
+      : `data:application/octet-stream;base64,${romSource.data}`
+    : null
 
   if (!game && !isLoadingRom) {
     return (
@@ -73,12 +91,51 @@ export function PlayPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Hide navbar on mobile to maximise screen space */}
+      <div className="hidden sm:block">
+        <Navbar />
+      </div>
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
-        {/* Back + header */}
-        <div className="flex items-center gap-3 mb-6">
+      {/* Mobile top bar */}
+      <div className="sm:hidden flex items-center gap-2 px-3 py-2 border-b border-border/50 bg-background/95 backdrop-blur-md sticky top-0 z-40">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 rounded-lg hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-all"
+        >
+          <ArrowLeft size={18} />
+        </button>
+        {game && consoleInfo && (
+          <>
+            <div
+              className="w-7 h-7 rounded-md flex items-center justify-center text-base shrink-0"
+              style={{ background: `${consoleInfo.color}22` }}
+            >
+              {consoleInfo.icon}
+            </div>
+            <h1 className="font-heading font-bold text-foreground text-sm truncate flex-1">{game.title}</h1>
+            {toggleFavorite && (
+              <button
+                onClick={() => toggleFavorite(game.id)}
+                className={cn(
+                  'p-1.5 rounded-lg transition-all',
+                  isFav ? 'text-red-400' : 'text-muted-foreground'
+                )}
+              >
+                <Heart size={15} fill={isFav ? 'currentColor' : 'none'} />
+              </button>
+            )}
+          </>
+        )}
+      </div>
+
+      <main className={cn(
+        'flex-1 flex flex-col',
+        'sm:max-w-5xl sm:mx-auto sm:w-full sm:px-6 sm:py-6'
+      )}>
+
+        {/* Desktop back + header */}
+        <div className="hidden sm:flex items-center gap-3 mb-5">
           <button
             onClick={() => navigate(-1)}
             className="p-2 rounded-lg hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-all"
@@ -86,7 +143,7 @@ export function PlayPage() {
             <ArrowLeft size={18} />
           </button>
 
-          {game && consoleInfo ? (
+          {game && consoleInfo && (
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <div
                 className="w-9 h-9 rounded-lg flex items-center justify-center text-xl shrink-0"
@@ -106,43 +163,58 @@ export function PlayPage() {
                   {game.year && <span className="text-xs text-muted-foreground font-mono">{game.year}</span>}
                 </div>
               </div>
+              {toggleFavorite && (
+                <button
+                  onClick={() => toggleFavorite(game.id)}
+                  className={cn(
+                    'ml-auto p-2 rounded-lg border transition-all',
+                    isFav
+                      ? 'text-red-400 bg-red-400/10 border-red-400/30'
+                      : 'text-muted-foreground border-border hover:text-red-400 hover:border-red-400/30'
+                  )}
+                >
+                  <Heart size={16} fill={isFav ? 'currentColor' : 'none'} />
+                </button>
+              )}
             </div>
-          ) : (
-            <div className="h-8 bg-muted/30 rounded-lg flex-1 animate-pulse" />
           )}
         </div>
 
         {/* ROM error */}
         {romError && (
-          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-start gap-2">
-            <span className="text-lg">⚠️</span>
+          <div className="mx-3 sm:mx-0 mb-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-start gap-2">
+            <span className="text-lg leading-none">⚠️</span>
             <div>
               <div className="font-medium mb-0.5">ROM Error</div>
-              <div className="text-red-400/80">{romError}</div>
+              <div className="text-red-400/80 text-xs leading-relaxed">{romError}</div>
               <Link to="/upload" className="text-primary hover:underline text-xs mt-1 block">Re-upload ROM →</Link>
             </div>
           </div>
         )}
 
-        {/* Loading ROM */}
+        {/* Emulator area */}
         {isLoadingRom ? (
-          <div className="aspect-video w-full bg-muted/20 rounded-xl border border-border flex items-center justify-center">
+          <div className={cn(
+            'bg-muted/20 border border-border flex items-center justify-center',
+            'mx-0 sm:mx-0 sm:rounded-xl',
+            'aspect-video w-full'
+          )}>
             <div className="flex flex-col items-center gap-3 text-muted-foreground">
               <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-              <span className="text-sm font-mono">Loading ROM from storage...</span>
+              <span className="text-sm font-mono">Loading ROM...</span>
             </div>
           </div>
-        ) : romBase64 && game ? (
+        ) : romUrl && game ? (
           <EmulatorPlayer
             game={game}
-            romBase64={romBase64}
+            romUrl={romUrl}
             onSaveState={(slot) => console.log(`Save state slot ${slot}`)}
           />
         ) : null}
 
-        {/* Game info accordion */}
-        {game && (
-          <div className="mt-6 border border-border rounded-xl overflow-hidden">
+        {/* Game info — desktop only below emulator */}
+        {game && !isLoadingRom && romUrl && (
+          <div className="hidden sm:block mt-5 border border-border rounded-xl overflow-hidden">
             <button
               onClick={() => setShowInfo(!showInfo)}
               className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-all"
@@ -200,7 +272,6 @@ export function PlayPage() {
                       </div>
                     )}
                   </div>
-
                   {game.description && (
                     <div>
                       <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5">Description</div>
@@ -212,7 +283,6 @@ export function PlayPage() {
             )}
           </div>
         )}
-
       </main>
     </div>
   )
