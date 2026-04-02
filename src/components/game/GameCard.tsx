@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Play, Heart, Trash2, Upload, Star } from 'lucide-react'
+import { Play, Trash2, Upload, Star } from 'lucide-react'
 import type { Game } from '../../types'
 import { CONSOLE_INFO } from '../../types'
 import { useGameLibrary } from '../../contexts/GameLibraryContext'
@@ -13,14 +13,13 @@ interface GameCardProps {
 
 export function GameCard({ game, viewMode = 'grid' }: GameCardProps) {
   const navigate = useNavigate()
-  const { favorites, toggleFavorite, removeGame } = useGameLibrary()
+  const { removeGame } = useGameLibrary()
   const [showConfirmDelete, setShowConfirmDelete] = useState(false)
   const [imgError, setImgError] = useState(false)
 
   const consoleInfo = CONSOLE_INFO[game.console]
-  const isFav = favorites.includes(game.id)
   const isDemo = !game.isLocal
-  const hasRom = game.isLocal && Boolean(game.romPath)
+  const hasRom = game.isLocal && Boolean(game.romFileName)
 
   const handlePlay = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -29,11 +28,6 @@ export function GameCard({ game, viewMode = 'grid' }: GameCardProps) {
     } else {
       navigate(`/play/${game.id}`)
     }
-  }
-
-  const handleFavorite = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    toggleFavorite(game.id)
   }
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -89,16 +83,6 @@ export function GameCard({ game, viewMode = 'grid' }: GameCardProps) {
 
         {/* Actions */}
         <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={handleFavorite}
-            className={cn(
-              'p-2 rounded-lg transition-all',
-              isFav ? 'text-red-400 bg-red-400/10' : 'text-muted-foreground hover:text-red-400 hover:bg-red-400/10'
-            )}
-          >
-            <Heart size={14} fill={isFav ? 'currentColor' : 'none'} />
-          </button>
-
           {hasRom ? (
             <button
               onClick={handlePlay}
@@ -203,22 +187,6 @@ export function GameCard({ game, viewMode = 'grid' }: GameCardProps) {
             {consoleInfo.shortName}
           </span>
         </div>
-
-        {/* Favorite button */}
-        {!isDemo && (
-          <button
-            onClick={handleFavorite}
-            className={cn(
-              'absolute top-2 right-2 p-1.5 rounded-lg transition-all',
-              'opacity-0 group-hover:opacity-100',
-              isFav
-                ? 'text-red-400 bg-background/80 opacity-100'
-                : 'text-foreground/60 bg-background/60 hover:text-red-400'
-            )}
-          >
-            <Heart size={13} fill={isFav ? 'currentColor' : 'none'} />
-          </button>
-        )}
 
         {/* Rating stars */}
         {game.rating && game.rating > 0 && (

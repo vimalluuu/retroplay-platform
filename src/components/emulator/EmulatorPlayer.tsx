@@ -13,7 +13,7 @@ import { cn } from '../../lib/utils'
 
 interface EmulatorPlayerProps {
   game: Game
-  romUrl: string
+  romBase64: string
   onSaveState?: (slot: number) => void
   className?: string
 }
@@ -43,10 +43,10 @@ declare global {
   }
 }
 
-// EmulatorJS CDN paths
-const EMULATORJS_CDN = 'https://cdn.emulatorjs.org/stable/data'
+// EmulatorJS local path
+const EMULATORJS_LOCAL = '/emulatorjs/data'
 
-export function EmulatorPlayer({ game, romUrl, onSaveState, className }: EmulatorPlayerProps) {
+export function EmulatorPlayer({ game, romBase64, onSaveState, className }: EmulatorPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [state, setState] = useState<EmulatorState>('idle')
   const [errorMsg, setErrorMsg] = useState('')
@@ -82,7 +82,7 @@ export function EmulatorPlayer({ game, romUrl, onSaveState, className }: Emulato
   }, [])
 
   const initEmulator = useCallback(() => {
-    if (!containerRef.current || !romUrl) return
+    if (!containerRef.current || !romBase64) return
 
     cleanup()
     setState('loading')
@@ -110,8 +110,8 @@ export function EmulatorPlayer({ game, romUrl, onSaveState, className }: Emulato
     // Configure EmulatorJS globals (must be set before loader.js is loaded)
     window.EJS_player = '#game'
     window.EJS_core = consoleInfo.core
-    window.EJS_gameUrl = romUrl
-    window.EJS_pathtodata = `${EMULATORJS_CDN}/`
+    window.EJS_gameUrl = `data:application/octet-stream;base64,${romBase64}`
+    window.EJS_pathtodata = `${EMULATORJS_LOCAL}/`
     window.EJS_startOnLoaded = true
     window.EJS_DEBUG_XX = false
     window.EJS_language = 'en-US'
@@ -145,7 +145,7 @@ export function EmulatorPlayer({ game, romUrl, onSaveState, className }: Emulato
 
     // Load EmulatorJS loader script
     const script = document.createElement('script')
-    script.src = `${EMULATORJS_CDN}/loader.js`
+    script.src = `${EMULATORJS_LOCAL}/loader.js`
     script.async = true
     script.onerror = () => {
       cleanup()
@@ -154,13 +154,13 @@ export function EmulatorPlayer({ game, romUrl, onSaveState, className }: Emulato
     }
     document.body.appendChild(script)
     scriptRef.current = script
-  }, [romUrl, consoleInfo.core, isMuted, cleanup])
+  }, [romBase64, consoleInfo.core, isMuted, cleanup])
 
   useEffect(() => {
     initEmulator()
     return cleanup
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [romUrl])
+  }, [romBase64])
 
   const toggleFullscreen = useCallback(() => {
     const el = containerRef.current

@@ -3,29 +3,18 @@ import type { Game, ConsoleType } from '../types'
 import {
   getAllGames,
   saveGame,
-  updateGame,
   deleteGame,
-  saveROM,
-  getROMBlobUrl,
-  getFavorites,
-  toggleFavorite as toggleFavoriteDB,
-  getRecentlyPlayed,
-  recordPlay,
+  saveRom,
 } from '../lib/storage'
 import { DEMO_GAMES } from '../lib/demo-games'
 
 interface GameLibraryContextType {
   games: Game[]
-  favorites: string[]
-  recentlyPlayed: string[]
   isLoading: boolean
 
   addGame: (game: Omit<Game, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Game>
   uploadROM: (file: File, console: ConsoleType, meta?: Partial<Game>) => Promise<Game>
   removeGame: (id: string) => Promise<void>
-  getGameRomUrl: (id: string) => Promise<string | null>
-  toggleFavorite: (id: string) => Promise<void>
-  markPlayed: (id: string) => Promise<void>
   refreshLibrary: () => Promise<void>
 
   searchGames: (query: string) => Game[]
@@ -36,24 +25,15 @@ const GameLibraryContext = createContext<GameLibraryContextType | null>(null)
 
 export function GameLibraryProvider({ children }: { children: React.ReactNode }) {
   const [games, setGames] = useState<Game[]>([])
-  const [favorites, setFavorites] = useState<string[]>([])
-  const [recentlyPlayed, setRecentlyPlayed] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   const refreshLibrary = useCallback(async () => {
     try {
-      const [stored, favs, recent] = await Promise.all([
-        getAllGames(),
-        getFavorites(),
-        getRecentlyPlayed(),
-      ])
+      const stored = await getAllGames()
 
-      // Merge stored games with demo placeholders
       const storedIds = new Set(stored.map(g => g.id))
       const demoFiltered = DEMO_GAMES.filter(d => !storedIds.has(d.id))
       setGames([...stored, ...demoFiltered])
-      setFavorites(favs)
-      setRecentlyPlayed(recent.map(r => r.gameId))
     } catch (err) {
       console.error('Failed to load library:', err)
       setGames(DEMO_GAMES)
@@ -69,7 +49,6 @@ export function GameLibraryProvider({ children }: { children: React.ReactNode })
   const addGame = useCallback(async (game: Omit<Game, 'id' | 'createdAt' | 'updatedAt'>) => {
     const newGame = await saveGame(game)
     setGames(prev => {
-      // Replace demo placeholder if same console
       const filtered = prev.filter(g => g.id !== `demo-${game.console}-1` || !g.isLocal === false)
       return [newGame, ...filtered]
     })
@@ -78,77 +57,45 @@ export function GameLibraryProvider({ children }: { children: React.ReactNode })
 
   const uploadROM = useCallback(async (
     file: File,
-    console: ConsoleType,
+    consoleType: ConsoleType,
     meta: Partial<Game> = {}
   ): Promise<Game> => {
-    // Save ROM binary to IDB
-    const { rom, blobUrl } = await saveROM(file, console)
+    // 1. Save ROM to local filesystem via Capacitor
+    const romFileName = await saveRom(file)
 
-    // Detect title from filename
     const titleFromFile = file.name
       .replace(/\.[^/.]+$/, '')
       .replace(/[_\-]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim()
 
-    // Save game metadata
+    // 2. Save game metadata locally
     const game = await saveGame({
       title: meta.title || titleFromFile,
-      console,
+      console: consoleType,
       description: meta.description || '',
       thumbnailUrl: meta.thumbnailUrl || '',
       year: meta.year,
       genre: meta.genre || [],
       players: meta.players || 1,
       rating: meta.rating,
-      romPath: rom.id,
-      romFileName: file.name,
+      romFileName: romFileName,
       romSize: file.size,
       isLocal: true,
+      romPath: romFileName // Keeping it for compatibility
     })
 
-    // Update rom record with game ID
-    await saveROM(file, console, game.id)
-
-    const gameWithUrl: Game = { ...game, romPath: blobUrl }
     setGames(prev => {
-      // Remove demo placeholder for this console
-      const filtered = prev.filter(g => !(g.id === `demo-${console}-1`))
-      return [gameWithUrl, ...filtered]
+      const filtered = prev.filter(g => !(g.id === `demo-${consoleType}-1`))
+      return [game, ...filtered]
     })
 
-    return gameWithUrl
+    return game
   }, [])
 
   const removeGame = useCallback(async (id: string) => {
     await deleteGame(id)
     setGames(prev => prev.filter(g => g.id !== id))
-    setFavorites(prev => prev.filter(fid => fid !== id))
-  }, [])
-
-  const getGameRomUrl = useCallback(async (id: string): Promise<string | null> => {
-    const game = games.find(g => g.id === id)
-    if (!game) return null
-
-    // If romPath is already a blob URL or HTTP URL, return it directly
-    if (game.romPath?.startsWith('blob:') || game.romPath?.startsWith('http')) {
-      return game.romPath
-    }
-
-    // Otherwise look up in IDB by game ID
-    return getROMBlobUrl(id)
-  }, [games])
-
-  const toggleFavorite = useCallback(async (id: string) => {
-    const isFav = await toggleFavoriteDB(id)
-    setFavorites(prev =>
-      isFav ? [...prev, id] : prev.filter(fid => fid !== id)
-    )
-  }, [])
-
-  const markPlayed = useCallback(async (id: string) => {
-    await recordPlay(id)
-    setRecentlyPlayed(prev => [id, ...prev.filter(gid => gid !== id)].slice(0, 20))
   }, [])
 
   const searchGames = useCallback((query: string): Game[] => {
@@ -161,23 +108,18 @@ export function GameLibraryProvider({ children }: { children: React.ReactNode })
     )
   }, [games])
 
-  const filterByConsole = useCallback((console: ConsoleType | 'all'): Game[] => {
-    if (console === 'all') return games
-    return games.filter(g => g.console === console)
+  const filterByConsole = useCallback((consoleFilter: ConsoleType | 'all'): Game[] => {
+    if (consoleFilter === 'all') return games
+    return games.filter(g => g.console === consoleFilter)
   }, [games])
 
   return (
     <GameLibraryContext.Provider value={{
       games,
-      favorites,
-      recentlyPlayed,
       isLoading,
       addGame,
       uploadROM,
       removeGame,
-      getGameRomUrl,
-      toggleFavorite,
-      markPlayed,
       refreshLibrary,
       searchGames,
       filterByConsole,

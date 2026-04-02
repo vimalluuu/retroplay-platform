@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { LayoutGrid, List, Upload, Gamepad2, Sparkles, TrendingUp } from 'lucide-react'
+import { LayoutGrid, List, Upload, Gamepad2, Sparkles } from 'lucide-react'
 import { GameCard } from '../components/game/GameCard'
 import { ConsoleFilter } from '../components/game/ConsoleFilter'
 import { Navbar } from '../components/layout/Navbar'
@@ -9,14 +9,14 @@ import { CONSOLE_INFO, type ConsoleType } from '../types'
 import { cn } from '../lib/utils'
 
 type ViewMode = 'grid' | 'list'
-type SortMode = 'title' | 'console' | 'recent' | 'favorites'
+type SortMode = 'title' | 'console'
 
 export function LibraryPage() {
-  const { games, favorites, recentlyPlayed, isLoading, searchGames } = useGameLibrary()
+  const { games, isLoading, searchGames } = useGameLibrary()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedConsole, setSelectedConsole] = useState<ConsoleType | 'all'>('all')
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
-  const [sortMode, setSortMode] = useState<SortMode>('recent')
+  const [sortMode, setSortMode] = useState<SortMode>('title')
 
   // Count games per console
   const gameCounts = useMemo(() => {
@@ -44,31 +44,12 @@ export function LibraryPage() {
       case 'console':
         list = [...list].sort((a, b) => a.console.localeCompare(b.console))
         break
-      case 'recent': {
-        const recentMap = new Map(recentlyPlayed.map((id, idx) => [id, idx]))
-        list = [...list].sort((a, b) => {
-          const ai = recentMap.get(a.id) ?? 9999
-          const bi = recentMap.get(b.id) ?? 9999
-          return ai - bi
-        })
-        break
-      }
-      case 'favorites': {
-        const favSet = new Set(favorites)
-        list = [...list].sort((a, b) => {
-          const af = favSet.has(a.id) ? 0 : 1
-          const bf = favSet.has(b.id) ? 0 : 1
-          return af - bf
-        })
-        break
-      }
     }
 
     return list
-  }, [games, searchQuery, selectedConsole, sortMode, recentlyPlayed, favorites, searchGames])
+  }, [games, searchQuery, selectedConsole, sortMode, searchGames])
 
   const localGames = games.filter(g => g.isLocal)
-  const recentGames = recentlyPlayed.slice(0, 4).map(id => games.find(g => g.id === id)).filter(Boolean)
 
   return (
     <div className="min-h-screen bg-background grid-scanlines">
@@ -92,7 +73,7 @@ export function LibraryPage() {
                 <span className="block neon-text-green animate-flicker">Arcade</span>
               </h1>
               <p className="text-muted-foreground text-lg max-w-xl mx-auto mb-8">
-                Upload your own ROM files and play classic games from NES, SNES, Game Boy, Sega Genesis and more — right in your browser.
+                Upload your own ROM files and play classic games from NES, SNES, Game Boy, Sega Genesis and more — all directly from your device storage.
               </p>
               <div className="flex items-center gap-3 justify-center">
                 <Link
@@ -115,23 +96,6 @@ export function LibraryPage() {
           </div>
         )}
 
-        {/* Recently played */}
-        {recentGames.length > 0 && (
-          <section className="mb-8 animate-fade-in">
-            <div className="flex items-center gap-2 mb-4">
-              <TrendingUp size={16} className="text-accent" />
-              <h2 className="font-heading font-semibold text-sm uppercase tracking-wider text-foreground/80">
-                Continue Playing
-              </h2>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {recentGames.map(game => game && (
-                <GameCard key={game.id} game={game} viewMode="grid" />
-              ))}
-            </div>
-          </section>
-        )}
-
         {/* Library section */}
         <section>
           {/* Section header */}
@@ -151,10 +115,8 @@ export function LibraryPage() {
                 onChange={e => setSortMode(e.target.value as SortMode)}
                 className="px-3 py-1.5 rounded-lg bg-muted/50 border border-border text-sm text-foreground/80 focus:outline-none focus:border-primary/50 cursor-pointer"
               >
-                <option value="recent">Recent</option>
                 <option value="title">Title A-Z</option>
                 <option value="console">Console</option>
-                <option value="favorites">Favorites</option>
               </select>
 
               {/* View toggle */}
